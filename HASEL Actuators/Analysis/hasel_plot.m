@@ -1,4 +1,4 @@
-%% hasel_9plots.m
+%% hasel_plot.m
 % Makes 9 graphs from the HASEL data: one graph for each combination of
 % frequency (3) and weight (3).  Both voltages (4000 V and 5000 V) are drawn
 % on the same graph so we get 9 graphs instead of 18.
@@ -29,6 +29,12 @@ for f = freqList
         sgtitle(sprintf('f = %.2f Hz   Weight = %d g', f, w))  % title on top
 
         % ---- TOP PLOT: input voltage ----
+        % Colors carry meaning so 4 lines are easy to tell apart:
+        %   Ch1 = blue,  Ch2 = red
+        %   4000 V = light & dashed,  5000 V = dark & solid
+        ch1color = [0.20 0.40 0.85];   % blue
+        ch2color = [0.85 0.30 0.20];   % red
+
         subplot(2,1,1)
         hold on                       % allow multiple lines on one plot
         for v = voltList
@@ -37,9 +43,19 @@ for f = freqList
             if isempty(row), continue; end   % skip if that file is missing
             d = T.allData{row};              % the timetable for this file
 
-            % Plot both channels' input voltage
-            plot(d.Time, d.Ch1_V, 'DisplayName', sprintf('Ch1 V, %d V', v))
-            plot(d.Time, d.Ch2_V, 'DisplayName', sprintf('Ch2 V, %d V', v))
+            % 4000 V -> dashed & lighter, 5000 V -> solid & full color
+            if v == 4000
+                sty = '--';  fade = 0.5;
+            else
+                sty = '-';   fade = 1.0;
+            end
+            c1 = 1 - fade*(1 - ch1color);   % fade toward white for 4000 V
+            c2 = 1 - fade*(1 - ch2color);
+
+            plot(d.Time, d.Ch1_V, sty, 'Color', c1, ...
+                'DisplayName', sprintf('Ch1 V, %d V', v))
+            plot(d.Time, d.Ch2_V, sty, 'Color', c2, ...
+                'DisplayName', sprintf('Ch2 V, %d V', v))
         end
         hold off
         xlabel('Time')
@@ -48,6 +64,7 @@ for f = freqList
         set(gca, 'FontSize', 14)
 
         % ---- BOTTOM PLOT: sensing signal ----
+        % Same color scheme as the top plot.
         subplot(2,1,2)
         hold on
         for v = voltList
@@ -55,9 +72,19 @@ for f = freqList
             if isempty(row), continue; end
             d = T.allData{row};
 
+            if v == 4000
+                sty = '--';  fade = 0.5;
+            else
+                sty = '-';   fade = 1.0;
+            end
+            c1 = 1 - fade*(1 - ch1color);
+            c2 = 1 - fade*(1 - ch2color);
+
             % detrend() removes slow drift so the wiggle is centered at 0
-            plot(d.Time, detrend(d.Ch1_S), 'DisplayName', sprintf('Ch1 S, %d V', v))
-            plot(d.Time, detrend(d.Ch2_S), 'DisplayName', sprintf('Ch2 S, %d V', v))
+            plot(d.Time, detrend(d.Ch1_S), sty, 'Color', c1, ...
+                'DisplayName', sprintf('Ch1 S, %d V', v))
+            plot(d.Time, detrend(d.Ch2_S), sty, 'Color', c2, ...
+                'DisplayName', sprintf('Ch2 S, %d V', v))
         end
         hold off
         xlabel('Time')

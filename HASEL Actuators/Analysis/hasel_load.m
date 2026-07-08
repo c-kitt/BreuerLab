@@ -10,7 +10,7 @@
 %
 % This script reads every file, pulls those numbers out of the name, and
 % stores everything in one big table called "T" that the plotting script
-% (hasel_9plots.m) then uses.
+% (hasel_9plots.m) then uses.ha
 %
 % HOW TO USE:
 %   1. Set dataFolder below to the folder with your .mat files.
@@ -20,7 +20,7 @@ clear
 clc
 
 %% ---- SET THIS: folder containing the .mat files ----
-dataFolder = '/Users/ckitt/Library/CloudStorage/GoogleDrive-casey_kittredge@brown.edu/Shared drives/Breuer Lab/Flume/BFS/Artimus/bench_tests/Air_test/Two_actuators';
+dataFolder = '/Users/ckitt/Library/CloudStorage/GoogleDrive-casey_kittredge@brown.edu/Shared drives/Breuer Lab/Flume/Backward Facing Step/Artimus actuator/bench_tests/Air test/Air_test_data/Two_actuators';
 
 %% Get a list of all .mat files in that folder
 files = dir(fullfile(dataFolder, '*.mat'));
