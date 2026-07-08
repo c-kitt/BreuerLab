@@ -1,0 +1,11 @@
+# Data — never push
+*.mat
+*.csv
+*.tdms
+
+# OS junk
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
