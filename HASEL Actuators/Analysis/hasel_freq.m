@@ -1,11 +1,13 @@
-%% hasel_weight_compare.m
-% Compares the three weights: each graph has 3 lines, one per weight
-% (0, 50, 100 g), so you can see how load changes the signal.
+%% hasel_freq_compare.m
+% Compares the three frequencies: each graph has 3 lines, one per frequency
+% (0.5, 0.75, 1.0 Hz), so you can see how frequency changes the signal.
 %
-% Makes 3 graphs -- one per frequency (0.5, 0.75, 1.0 Hz).
+% Makes 3 graphs -- one per weight (0, 50, 100 g).
 % Each graph:  input on top, sense on bottom, one channel, 4000 V, 10 cycles.
 %
-%   - x-axis is in CYCLES (0 to 10), not seconds.
+%   - x-axis is in CYCLES (0 to 10), not seconds. Because every line is shown
+%     over the same number of cycles, the different frequencies line up on a
+%     common cycle axis even though they run at different speeds in real time.
 %   - sense is referenced to zero (its lowest point sits at 0), not detrended.
 %   - figures are saved as .fig and .svg.
 %
@@ -24,31 +26,31 @@ volt        = 4000;
 nCyclesShow = 10;
 saveDir     = "figures";    % base folder; subfolders made per type/channel
 
-vName = channel + "_V";     % input column name, e.g. "Ch1_V"
-sName = channel + "_S";     % sense column name, e.g. "Ch1_S"
+vName = channel + "_V";
+sName = channel + "_S";
 
-% one distinct color per weight
-weightColors = [0.20 0.40 0.85;    % 0 g   -> blue
-                0.90 0.60 0.10;    % 50 g  -> orange
-                0.80 0.20 0.20];   % 100 g -> red
+% one distinct color per frequency
+freqColors = [0.20 0.40 0.85;    % 0.5  Hz -> blue
+              0.10 0.65 0.45;    % 0.75 Hz -> green
+              0.80 0.20 0.20];   % 1.0  Hz -> red
 
-for f = freqList
+for w = weightList
 
     fig = figure;
-    sgtitle(sprintf('f = %.2f Hz   (%s, 4000 V, 10 cycles)', f, channel))
+    sgtitle(sprintf('Weight = %d g   (%s, 4000 V, 10 cycles)', w, channel))
 
-    for iw = 1:numel(weightList)
-        w = weightList(iw);
+    for ifq = 1:numel(freqList)
+        f = freqList(ifq);
 
         row = find(T.freq==f & T.weight==w & T.volt==volt & T.trial==1, 1);
         if isempty(row), continue; end
         d = T.allData{row};
 
         t   = seconds(d.Time - d.Time(1));
-        vin = d.(vName);                 % input voltage for this channel
-        sig = d.(sName);                 % sense signal for this channel
+        vin = d.(vName);
+        sig = d.(sName);
 
-        % ---- align: start at the trough of the first cycle (like a sine) ----
+        % ---- align: start at the trough of the first cycle ----
         Fs = 1/mean(diff(t));
         oneCycle = round(Fs / f);
         searchEnd = min(round(1.5*oneCycle), length(vin));
@@ -59,41 +61,39 @@ for f = freqList
         lastIdx = min(startIdx + samplesToShow - 1, length(t));
         idx = startIdx:lastIdx;
 
-        % ---- x-axis in CYCLES: elapsed time * frequency ----
+        % ---- x-axis in CYCLES ----
         xCycles = (t(idx) - t(startIdx)) * f;
 
-        % ---- reference sense to zero: subtract its lowest point ----
+        % ---- reference sense to zero ----
         sigZ = sig(idx) - min(sig(idx));
 
-        c = weightColors(iw,:);
+        c = freqColors(ifq,:);
 
         % TOP: input
         subplot(2,1,1)
         plot(xCycles, vin(idx), 'Color', c, 'LineWidth', 1.2, ...
-            'DisplayName', sprintf('%d g', w)); hold on
+            'DisplayName', sprintf('%.2f Hz', f)); hold on
 
         % BOTTOM: sense (referenced to zero)
         subplot(2,1,2)
         plot(xCycles, sigZ, 'Color', c, 'LineWidth', 1.2, ...
-            'DisplayName', sprintf('%d g', w)); hold on
+            'DisplayName', sprintf('%.2f Hz', f)); hold on
     end
 
-    % finish TOP
     subplot(2,1,1); hold off
     xlabel('Cycles'); ylabel('Input [V]'); xlim([0 nCyclesShow])
     legend('Location','eastoutside'); set(gca,'FontSize',14)
 
-    % finish BOTTOM
     subplot(2,1,2); hold off
     xlabel('Cycles'); ylabel('Sense [V]'); xlim([0 nCyclesShow])
     legend('Location','eastoutside'); set(gca,'FontSize',14)
 
-    % ---- save as .fig and .svg (in figures/weights/<channel>/) ----
-    outDir = fullfile(saveDir, "weights", channel);
+    % ---- save as .fig and .svg (in figures/frequencies/<channel>/) ----
+    outDir = fullfile(saveDir, "frequencies", channel);
     if ~isfolder(outDir), mkdir(outDir); end
-    fname = fullfile(outDir, sprintf('weights_%s_f%.2fHz', channel, f));
+    fname = fullfile(outDir, sprintf('freqs_%s_w%03dg', channel, w));
     savefig(fig, fname + ".fig");
     print(fig, fname + ".svg", '-dsvg');
 end
 
-fprintf('Made 3 weight-comparison graphs for %s (saved .fig and .svg).\n', channel);
+fprintf('Made 3 frequency-comparison graphs for %s (saved .fig and .svg).\n', channel);

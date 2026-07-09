@@ -1,7 +1,7 @@
-%% hasel_9plots_v2.m
+%% hasel_plot_v2.m
 % Updated 9-graph plot based on feedback:
-%   1. Show only the first 10 drive cycles (not all 25).
-%   2. Only the 4000 V data (drop 5000 V).
+%   1. Show only the first 10 drive cycles.
+%   2. Only the 4000 V data.
 %   3. Every graph starts at (0,0) rising, like a normal sine wave. We find
 %      where the input signal first crosses zero going up, and shift BOTH the
 %      input and the sensing signal by that same amount so they stay lined up
@@ -41,24 +41,17 @@ for f = freqList
         ch1S = detrend(d.Ch1_S);   % detrend centers the sensing signal at 0
         ch2S = detrend(d.Ch2_S);
 
-        % ---- STEP 3: find the bottom of a cycle to start from ----
-        % The input is unipolar (0 up to ~1.2 V, never negative), so a "normal
-        % sine start" means beginning at the bottom of the wave (the minimum)
-        % and rising up. We look for the first low point of Ch1_V after things
-        % have settled, then start there. Both signals are shifted the same way.
-        %
-        % Method: find where the input is near its minimum AND about to rise.
-        loVal = min(ch1V) + 0.1*(max(ch1V)-min(ch1V));   % "near the bottom"
-        startIdx = 1;
-        for k = 2:length(ch1V)-1
-            if ch1V(k) < loVal && ch1V(k+1) >= ch1V(k)   % at a low point, rising
-                startIdx = k;
-                break
-            end
-        end
+        % ---- STEP 3: find the bottom (trough) of the first cycle ----
+        % The input is unipolar (0 up to ~1.2 V), so a "normal sine start"
+        % means beginning at the lowest point of the wave and rising up.
+        % We look within the first ~1.5 cycles and pick the actual minimum
+        % sample there, so we start right at the trough (not partway up).
+        Fs = 1/mean(diff(t));
+        oneCycle = round(Fs / f);                    % samples in one cycle
+        searchEnd = min(round(1.5*oneCycle), length(ch1V));
+        [~, startIdx] = min(ch1V(1:searchEnd));      % index of the trough
 
         % ---- keep only 10 cycles' worth of samples from that start ----
-        Fs = 1/mean(diff(t));                 % sample rate (Hz)
         samplesToShow = round(nCyclesShow / f * Fs);
         lastIdx = min(startIdx + samplesToShow - 1, length(t));
         idx = startIdx:lastIdx;
